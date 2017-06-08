@@ -1,0 +1,30 @@
+{
+  "name": "callback-free-typescript",
+  "version": "1.0.0",
+  "description": "",
+  "bin": {
+    "callback-free": "./lib/callback-free-cli.js",
+    "callback-free-tsc": "./lib/callback-free-tsc.js"
+  },
+  "main": "./lib/index.js",
+  "scripts": {
+    "clean": "npm-run-all -p clean:core",
+    "clean:core": "rimraf lib",
+    "compile": "npm-run-all -p compile:core",
+    "compile:core": "tsc -p src",
+    "test": "npm-run-all -s compile test:core",
+    "test:core": "cd test; node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "typescript": ">=2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.18",
+    "junit": "^1.4.9",
+    "npm-run-all": "^4.0.2",
+    "rimraf": "^2.6.1"
+  }
+}
