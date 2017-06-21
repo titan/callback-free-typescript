@@ -5,13 +5,11 @@ const it = junit();
 const { eq } = it;
 
 it.describe("basic", it => {
-  /*
   it("test no argument in callback", () => {
     let source = "function foo() { let () @= bar(); console.log(\"hello\"); }";
     let target = "function foo() {    bar(() => { console.log(\"hello\"); });}";
     return eq(cbfree.transform(source).replace(/\n/g, "") , target);
   });
-  */
   it("test one argument without type in callback function", () => {
     let source = "function foo() { let e @= bar(); console.log(e); }";
     let target = "function foo() {    bar((e) => { console.log(e); });}";

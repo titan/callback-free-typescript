@@ -10,9 +10,9 @@ function printAllChildren(node: ts.Node, depth = 0) {
   node.getChildren().forEach(c=> printAllChildren(c, depth));
 }
 
-function convert_to_callback(vardecl: ts.VariableStatement, call: ts.CallExpression, statements: ts.Statement[]): ts.Statement {
+function convert_to_callback(declarations: ts.VariableDeclaration[], call: ts.CallExpression, statements: ts.Statement[]): ts.Statement {
   const block: ts.Block = ts.createBlock(statements);
-  const parameters: ts.ParameterDeclaration[] = vardecl.declarationList.declarations.map(decl => ts.createParameter([], [], null, decl.getChildAt(0).getText(), null, decl.getChildCount() > 2 ? ts.createTypeReferenceNode(decl.getChildAt(2).getText(), []) : null));
+  const parameters: ts.ParameterDeclaration[] = declarations.map(decl => ts.createParameter([], [], null, decl.getChildAt(0).getText(), null, decl.getChildCount() > 2 ? ts.createTypeReferenceNode(decl.getChildAt(2).getText(), []) : null));
   const lambda: ts.ArrowFunction = ts.createArrowFunction([], [], parameters, null, null, block);
   const args: ts.Expression [] = [];
   let found_star: boolean = false;
@@ -37,15 +37,21 @@ function iterate_statements(statements: ts.Statement[]): ts.Statement[] {
       const pstmt = statements[i - 1];
       const nstmt = statements[i + 1];
       if (pstmt.kind === ts.SyntaxKind.VariableStatement && nstmt.kind === ts.SyntaxKind.ExpressionStatement && (nstmt as ts.ExpressionStatement).expression.kind === ts.SyntaxKind.CallExpression) {
-        // found
+        // found more than one parameter in callback
         let stmts: ts.Statement[] = null;
         if (i > 1) {
-          stmts = [...statements.slice(0, i - 1), convert_to_callback(pstmt as ts.VariableStatement, (nstmt as ts.ExpressionStatement).expression as ts.CallExpression, iterate_statements(statements.slice(i + 2)))];
+          stmts = [...statements.slice(0, i - 1), convert_to_callback((pstmt as ts.VariableStatement).declarationList.declarations, (nstmt as ts.ExpressionStatement).expression as ts.CallExpression, iterate_statements(statements.slice(i + 2)))];
         } else {
-          stmts = [convert_to_callback(pstmt as ts.VariableStatement, (nstmt as ts.ExpressionStatement).expression as ts.CallExpression, iterate_statements(statements.slice(i + 2)))];
+          stmts = [convert_to_callback((pstmt as ts.VariableStatement).declarationList.declarations, (nstmt as ts.ExpressionStatement).expression as ts.CallExpression, iterate_statements(statements.slice(i + 2)))];
 
         }
         return stmts;
+      }
+      if (pstmt.kind === ts.SyntaxKind.ExpressionStatement && nstmt.kind === ts.SyntaxKind.ExpressionStatement && (nstmt as ts.ExpressionStatement).expression.kind === ts.SyntaxKind.CallExpression) {
+        if (pstmt.getText() === "let ()") {
+          // found empty parameter in callback
+          return [convert_to_callback([], (nstmt as ts.ExpressionStatement).expression as ts.CallExpression, iterate_statements(statements.slice(i + 2)))];
+        }
       }
     }
   }
